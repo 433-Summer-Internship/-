@@ -1,78 +1,102 @@
-# Harim-Junhong-Mik (Team PocketChat)
+'''
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-<b>PocketChat Application</b> - A Console based chatting application that includes live chat rooms, message rankings, and multiple server support. Below is a summary of the client to server protocol design. The user and room information databases are maintaned by a Redis server run on Centos 7. The database is accessed by the servers and an admin/moderator client application.
+namespace client
+{
+    public struct Protocol
+    {
+        public ushort command;
+        public ushort length;
+        public byte[] data;
+    }
 
-<b>PocketChat Application Protocol Summary</b>  
--> The full details of the protocol can be found in ChatProtocol.cs  
-Our strategy for our chat protocol was to use a simple generalized format, which would allow for facile and convenient expandability. Below is the strut that defines our protocol.  
-```
-struct ChatProtocol {  
-	byte 		command;			//256 possible commands  
-	ushort		fixedLengthField;		//unsigned short custom-value  
-	byte[]		variableLengthField;		//Variable sized value  
-}  
-```
-  
-<b>command (byte):</b>  
-A single byte at the beginning is reserved for determining the type of command that is being sent to either the server or the client. Using a byte allows for 256 possible commands, which is plenty for a small scale chatting application with plenty of room for expansion. The command 0 is reserved as a lack of command. A list of commands are below:     
+    public class function
+    {
+        public static byte[] ProtocolToByteArray(Protocol input)
+        {
+            byte[] buffer = new byte[(sizeof(ushort) * 2)+input.data.Length];
+            BitConverter.GetBytes(input.command).CopyTo(buffer,0);
+            BitConverter.GetBytes(input.length).CopyTo(buffer, sizeof(ushort));
+            input.data.CopyTo(buffer, sizeof(ushort) * 2);
+            return buffer;
+        }
 
-Login           	10  
-Logout          	11  
-MessageToServer 	21  
-MessageToClient 	22  
-CreateRoom      	30    
-JoinRoom        	31  
-LeaveRoom       	32  
-RoomListRequest        	40  
-SendRoomList    	41  
-UserListRequest        	50   
-UserListSend        	51 
-Heatbeat        	60   
-ConnectionPass        	60 
-reponse 		+100  (example: login_response = 110)
+        public static Protocol bytearraytoprotocol(byte[] input)
+        {
+            Protocol output = new Protocol();
 
-<b>fixedLengthField:</b>  
-A ushort is used as the next segment of data. The purpose of this value is to hold small values of small-sized commands such a join room request. For larger-sized commands, this value specifies vital information about the variableLengthField. Some values are listed below:  
+            output.command = BitConverter.ToUInt16(input, 0);
+            output.length = BitConverter.ToUInt16(input, sizeof(ushort));
+            Array.ConstrainedCopy(input, sizeof(ushort) * 2, output.data, 0, output.length);
 
-Login – ID#PW Length  
-Logout – 0  
-LoginResult - 1
-MessageToServer – Message Length  
-MessageToClient – Message Length  
-GetRoomList – 0  
-JoinRoom – Room Number
-CreateRoom – Room Name Length    
-LeaveRoom – 0  
-SendRoomList – Room List Part Size 
-HeartBeat – 0  
-GetUserInfo – 0  
-SendUserInfo – Number of Users  
+            return output;
+        }
+    }
 
-<b>variableLengthField:</b>  
-A variable length byte field with a maximum size of 1024 bytes. This portion of the protocol allows for messages to be sent of various sizes or secondary small data for smaller-sized commands such as login/logout commands. Some commands use just 1 byte to keep overhead for the common protocol at a minimum. Some details are outlined below:
+    public class Commands
+    {
+        public const ushort SIGNUP = 100;
+        public const ushort SIGNUP_FAIL = 102;
+        public const ushort SIGNUP_SUCCESS = 105;
 
-Login – Username+Password (fixed length)  Login format = ID#PW  
-Logout – Username (fixed length)   
-LoginResult - 1 (success)   
-LoginResult - -1 (fail)   
-MessageToServer – Message (Length = fixedLengthField, up to 1010 bytes)  
-MessageToClient – Message (Length = fixedLengthField, up to 1024 bytes - includes username)    
-GetRoom - Room Name (Length = fixedLengthField)  
-GetRoomList – 0 (fixed length – 1 byte)  
-JoinRoom – 0 (fixed length – 1 byte)  
-CreateRoom – 0 (fixed length – 1 byte)  
-CreateRoomResult - Room Number  
-LeaveRoom – 0 (fixed length – 1 byte)  
-SendRoomList – Room Data (Length = fixedLengthField - includes a part number and total part number in the 0th and 1st byte)  
-HeartBeat – 0 (fixed length – 1 byte)  
-GetUserInfo – 0 (fixed length – 1 byte)  
-SendUserInfo – Number of Real Users (fixed length)  
+        public const ushort DELETE_USER = 110;
+        public const ushort DELETE_USER_FAIL = 112;
+        public const ushort DELETE_USER_SUCCESS = 115;
 
-<b>Code</b>:  
-Source code, dll, and exe files can be found at various locations:  
-Client: https://github.com/eblikes2play/Chat_Client    
-FE Server: https://github.com/433-Summer-Internship/Harim-Junhong-Mik/tree/master/fes   
-Redis Client: https://github.com/Mukikaizoku/MikRedisDB-for-Pocketchat-App   
-Admin (Monitor) Client: https://github.com/Mukikaizoku/PocketChat-Admin-Client
+        public const ushort UPDATE_USER = 120;
+        public const ushort UPDATE_USER_USER_FAIL = 122;
+        public const ushort UPDATE_USER_SUCCESS = 125;
+
+        public const ushort SIGNIN = 200;
+        public const ushort SIGNIN_FAIL = 202;
+        public const ushort SIGNIN_SUCCESS = 205;
+
+        public const ushort AUTH_TO_CHAT = 210;
+        public const ushort AUTH_TO_CHAT_FAIL = 212;
+        public const ushort AUTH_TO_CHAT_SUCCESS = 215;
+
+        public const ushort DUMMY_SIGNIN = 220;
+        public const ushort DUMMY_SIGNIN_FAIL = 222;
+        public const ushort DUMMY_SIGNIN_SUCCESS = 225;
+
+        public const ushort LOGOUT = 300;
+        public const ushort LOGOUT_FAIL = 302;
+        public const ushort LOGOUT_SUCCESS = 305;
+
+        public const ushort ROOM_LIST = 400;
+        public const ushort ROOM_LIST_FAIL = 402;
+        public const ushort ROOM_LIST_SUCCESS = 405;
+
+        public const ushort CREATE_ROOM = 500;
+        public const ushort CREATE_ROOM_FAIL = 502;
+        public const ushort CREATE_ROOM_SUCCESS = 505;
+
+        public const ushort JOIN_ROOM = 600;
+        public const ushort JOIN_ROOM_FAIL = 602;
+        public const ushort JOIN_ROOM_SUCCESS = 605;
+        public const ushort ROOM_FULL = 615;
+        public const ushort WRONG_SERVER = 625;
+        public const ushort NO_ROOM = 635;
 
 
+        public const ushort LEAVE_ROOM = 700;
+        public const ushort LEAVE_ROOM_FAIL = 702;
+        public const ushort LEAVE_ROOM_SUCCESS = 705;
+
+        public const ushort DESTROY_ROOM = 800;
+        public const ushort DESTROY_ROOM_FAIL = 802;
+        public const ushort DESTROY_ROOM_SUCCESS = 805;
+
+        public const ushort MSG = 900;
+        public const ushort MSG_FAIL = 902;
+        public const ushort MSG_SUCCESS = 905;
+
+        public const ushort HEARTBEAT = 1000;
+        public const ushort HEARTBEAT_FAIL = 1002;
+        public const ushort HEARTBEAT_SUCCESS = 1005;
+    }
+}
+'''
