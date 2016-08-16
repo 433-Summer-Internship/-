@@ -1,6 +1,4 @@
 '''
-namespace client
-{
     public struct Protocol
     {
         public ushort command;
@@ -93,5 +91,5 @@ namespace client
         public const ushort HEARTBEAT_FAIL = 1002;
         public const ushort HEARTBEAT_SUCCESS = 1005;
     }
-}
+
 '''
