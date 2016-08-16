@@ -1,5 +1,5 @@
 '''
-    public struct Protocol
+public struct Protocol
     {
         public ushort command;
         public ushort length;
@@ -91,5 +91,4 @@
         public const ushort HEARTBEAT_FAIL = 1002;
         public const ushort HEARTBEAT_SUCCESS = 1005;
     }
-
-'''
+    '''
