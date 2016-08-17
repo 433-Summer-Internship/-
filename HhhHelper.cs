@@ -71,9 +71,6 @@ namespace Joonhaehok
             public const ushort SIGNIN = 200;
             public const ushort SIGNIN_SUCCESS = 202;
             public const ushort SIGNIN_FAIL = 205;
-            public const ushort AUTH_TO_CHAT = 210;
-            public const ushort AUTH_TO_CHAT_SUCCESS = 212;
-            public const ushort AUTH_TO_CHAT_FAIL = 215;
             public const ushort DUMMY_SIGNIN = 220;
             public const ushort DUMMY_SIGNIN_SUCCESS = 222;
             public const ushort DUMMY_SIGNIN_FAIL = 225;
@@ -95,9 +92,10 @@ namespace Joonhaehok
             public const ushort JOIN_FAIL = 605;
             public const ushort JOIN_FULL_FAIL = 615;
             public const ushort JOIN_NULL_FAIL = 625;
-            public const ushort JOIN_REDIRECT = 650;
-            public const ushort JOIN_REDIRECT_SUCCESS = 652;
-            public const ushort JOIN_REDIRECT_FAIL = 655;
+
+            public const ushort CONNECTION_PASS = 650;
+            public const ushort CONNECTION_PASS_SUCCESS = 652;
+            public const ushort CONNECTION_PASS_FAIL = 655;
 
             public const ushort LEAVE_ROOM = 700;
             public const ushort LEAVE_ROOM_SUCCESS = 702;
