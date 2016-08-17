@@ -1,5 +1,12 @@
 ```
-public struct Protocol
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace client
+{
+    public struct Protocol
     {
         public ushort command;
         public ushort length;
@@ -10,8 +17,8 @@ public struct Protocol
     {
         public static byte[] ProtocolToByteArray(Protocol input)
         {
-            byte[] buffer = new byte[(sizeof(ushort) * 2)+input.data.Length];
-            BitConverter.GetBytes(input.command).CopyTo(buffer,0);
+            byte[] buffer = new byte[(sizeof(ushort) * 2) + input.data.Length];
+            BitConverter.GetBytes(input.command).CopyTo(buffer, 0);
             BitConverter.GetBytes(input.length).CopyTo(buffer, sizeof(ushort));
             input.data.CopyTo(buffer, sizeof(ushort) * 2);
             return buffer;
@@ -23,7 +30,14 @@ public struct Protocol
 
             output.command = BitConverter.ToUInt16(input, 0);
             output.length = BitConverter.ToUInt16(input, sizeof(ushort));
-            Array.ConstrainedCopy(input, sizeof(ushort) * 2, output.data, 0, output.length);
+
+            if (output.length <= 0)
+                output.data = new byte[0];
+            else
+            {
+                output.data = new byte[output.length];
+                Array.ConstrainedCopy(input, sizeof(ushort) * 2, output.data, 0, output.length);
+            }
 
             return output;
         }
@@ -91,4 +105,5 @@ public struct Protocol
         public const ushort HEARTBEAT_FAIL = 1002;
         public const ushort HEARTBEAT_SUCCESS = 1005;
     }
+}
     ```
