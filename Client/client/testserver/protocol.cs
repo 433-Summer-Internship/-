@@ -7,48 +7,19 @@ namespace client
 {
     public struct Protocol
     {
-        ushort _command;
-        public ushort command { get { return _command; } set { _command = value; } }
-        ushort length;
-        byte[] data;
-  
-        public void InitData()
-        {
-            data = new byte[length];
-        }
-        public void SetLength(ushort i)
-        {
-            length = i;
-            InitData();
-        }
-
-        public ushort GetLength()
-        {
-            return length;
-        }
-
-        public byte[] GetData()
-        {
-            return data;
-        }
-
-        public void SetData(byte[] input)
-        {
-            data = input;
-            length = (ushort)input.Length;
-        }
+        public ushort command;
+        public ushort length;
+        public byte[] data;
     }
 
     public class function
     {
         public static byte[] ProtocolToByteArray(Protocol input)
         {
-            byte[] buffer = new byte[(sizeof(ushort) * 2)+input.GetData().Length];
-            BitConverter.GetBytes(input.command).CopyTo(buffer,0);
-            byte[] test = BitConverter.GetBytes(input.GetLength());
-            BitConverter.GetBytes(input.GetLength()).CopyTo(buffer, sizeof(ushort));
-            if(input.GetData().Length>=1)
-                input.GetData().CopyTo(buffer, sizeof(ushort) * 2);
+            byte[] buffer = new byte[(sizeof(ushort) * 2) + input.data.Length];
+            BitConverter.GetBytes(input.command).CopyTo(buffer, 0);
+            BitConverter.GetBytes(input.length).CopyTo(buffer, sizeof(ushort));
+            input.data.CopyTo(buffer, sizeof(ushort) * 2);
             return buffer;
         }
 
@@ -57,8 +28,15 @@ namespace client
             Protocol output = new Protocol();
 
             output.command = BitConverter.ToUInt16(input, 0);
-            output.SetLength(BitConverter.ToUInt16(input, sizeof(ushort)));
-            Array.ConstrainedCopy(input, sizeof(ushort) * 2, output.GetData(), 0, output.GetLength());
+            output.length = BitConverter.ToUInt16(input, sizeof(ushort));
+
+            if (output.length <= 0)
+                output.data = new byte[0];
+            else
+            {
+                output.data = new byte[output.length];
+                Array.ConstrainedCopy(input, sizeof(ushort) * 2, output.data, 0, output.length);
+            }
 
             return output;
         }

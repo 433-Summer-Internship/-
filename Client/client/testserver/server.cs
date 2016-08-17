@@ -12,17 +12,17 @@ namespace testserver
 {
     class server
     {
-        
+
         public static byte[] szData;
         public static Socket m_ServerSocket;
         static void Main(string[] args)
         {
-            
 
-             m_ServerSocket = new Socket(
-                                AddressFamily.InterNetwork,
-                                SocketType.Stream,
-                                ProtocolType.Tcp);
+
+            m_ServerSocket = new Socket(
+                               AddressFamily.InterNetwork,
+                               SocketType.Stream,
+                               ProtocolType.Tcp);
             IPEndPoint ipep = new IPEndPoint(IPAddress.Any, 10000);
             m_ServerSocket.Bind(ipep);
             m_ServerSocket.Listen(20);
@@ -35,10 +35,10 @@ namespace testserver
             Console.ReadLine();
         }
 
-        public static  void Accept_Completed(object sender, SocketAsyncEventArgs e)
+        public static void Accept_Completed(object sender, SocketAsyncEventArgs e)
         {
             Socket ClientSocket = e.AcceptSocket;
-            
+
 
             if (ClientSocket != null)
             {
@@ -59,12 +59,12 @@ namespace testserver
             Socket ClientSocket = (Socket)sender;
             if (ClientSocket.Connected && e.BytesTransferred > 0)
             {
-                
+
                 Protocol receiveProtocol = function.bytearraytoprotocol(e.Buffer);
 
                 Console.WriteLine(receiveProtocol.command);
-                Console.WriteLine(receiveProtocol.GetLength());
-                Console.WriteLine(Encoding.UTF8.GetString(receiveProtocol.GetData()));
+                Console.WriteLine(receiveProtocol.length);
+                Console.WriteLine(Encoding.UTF8.GetString(receiveProtocol.data));
 
                 e.SetBuffer(szData, 0, 1024);
 
@@ -73,9 +73,9 @@ namespace testserver
                 SocketAsyncEventArgs sendEvent = new SocketAsyncEventArgs();
 
 
-                if(receiveProtocol.command==Commands.HEARTBEAT)
+                if (receiveProtocol.command == Commands.HEARTBEAT)
                     receiveProtocol.command = Commands.HEARTBEAT_SUCCESS;
-                else if(receiveProtocol.command == Commands.SIGNIN)
+                else if (receiveProtocol.command == Commands.SIGNIN)
                     receiveProtocol.command = Commands.SIGNIN_SUCCESS;
 
                 byte[] szData2 = function.ProtocolToByteArray(receiveProtocol);

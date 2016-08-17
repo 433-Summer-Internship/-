@@ -5,6 +5,7 @@ using System.Text;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+
 namespace client
 {
     class Client
@@ -21,6 +22,7 @@ namespace client
 
         private string errormsg = "";
         private int roomNumber;
+        private const int heartbeatInterval = 3;
 
         private void ResetState()
         {
@@ -228,7 +230,7 @@ namespace client
 
                 receiveEvent.UserToken = mySocket;
                 //receive buff
-                receiveEvent.SetBuffer(new byte[1024], 0, 1024);
+                receiveEvent.SetBuffer(new byte[4], 0, 4);
                 //receive Event
                 receiveEvent.Completed += new EventHandler<SocketAsyncEventArgs>(Recieve_Completed);
                 //request receive
@@ -238,7 +240,7 @@ namespace client
                 myState = ClientState.None;
 
                 timer = new System.Timers.Timer();          
-                timer.Interval = 3 * 1000;                 
+                timer.Interval = heartbeatInterval * 1000;                 
                 timer.Elapsed += new System.Timers.ElapsedEventHandler(SendHeartbeat);
                 timer.Start();
             }
@@ -265,14 +267,26 @@ namespace client
             if (true == socketClient.Connected)
             {//연결이 되어 있다.
 
-                //데이터 수신
-                Protocol receiveProtocol = function.bytearraytoprotocol(e.Buffer);
+                if (e.Buffer.Length == 4)
+                {
+                    Protocol receiveProtocol = new Protocol(); ;
 
-                //명령을 분석 한다.
-                ProtocolAnalysis(receiveProtocol);
+                    //ushort 2개가 버퍼로 들어옴
+                    receiveProtocol.command = BitConverter.ToUInt16(e.Buffer, 0);
+                    receiveProtocol.length = BitConverter.ToUInt16(e.Buffer, sizeof(ushort));
+                    receiveProtocol.data = new byte[receiveProtocol.length];
 
-                //다음 메시지를 받을 준비를 한다.
-                socketClient.ReceiveAsync(e);
+                    SocketAsyncEventArgs receiveData = new SocketAsyncEventArgs();
+                    receiveData.Completed += new EventHandler<SocketAsyncEventArgs>(Recieve_Completed);
+                    receiveData.SetBuffer(receiveProtocol.data, 0, receiveProtocol.length);
+                    socketClient.ReceiveAsync(receiveData);
+                    
+                    //명령을 분석 한다.
+                    ProtocolAnalysis(receiveProtocol);
+
+                    //다음 메시지를 받을 준비를 한다.
+                    socketClient.ReceiveAsync(e);
+                }
             }
             else
             {
@@ -409,19 +423,22 @@ namespace client
         }
         private void Disconnection()
         {
-            //mySocket.Disconnect(true);//???
             //init socket
-            serverSocket.Close();
-            
-            if (timer!=null)
+            if (serverSocket.Connected)
+            {
+                serverSocket.Disconnect(true);
+                serverSocket.Close();
+            }
+
+            if (timer != null)
                 timer.Stop();
 
             myState = ClientState.Disconnect;
-            
+
             heartbeat = 0;
             mySocket = null;
         }
-        
+
         private void SendMSG(ushort command,byte[] data=null)
         {
             
@@ -448,7 +465,13 @@ namespace client
             
             byte[] szData = function.ProtocolToByteArray(sendProtocol);
             sendEvent.SetBuffer(szData, 0, szData.Length);
+            sendEvent.Completed += new EventHandler<SocketAsyncEventArgs>(Send_Completed);
             mySocket.SendAsync(sendEvent);
+        }
+        private void Send_Completed(object sender, SocketAsyncEventArgs e)
+        {
+            Socket _client = (Socket)sender;
+            //_client.Send(e.Buffer);
         }
     }
 }
