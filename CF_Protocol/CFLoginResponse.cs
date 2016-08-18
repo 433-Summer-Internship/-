@@ -1,5 +1,5 @@
 //Login and ConnectPassing
-struct LoginResponseBody
+struct CFLoginResponse
 {
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
     char[] ip;
