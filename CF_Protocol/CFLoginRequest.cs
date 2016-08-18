@@ -1,4 +1,4 @@
-struct LoginRequestBody
+struct CFLoginRequest
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 12)]
         char[] user;
