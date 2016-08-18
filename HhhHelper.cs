@@ -252,8 +252,8 @@ namespace Junhaehok
             public const ushort DUMMY_SIGNIN_SUCCESS = 222;
             public const ushort DUMMY_SIGNIN_FAIL = 225;
             public const ushort INITIALIZE = 250; // CL to FE (check cookie as soon as connection established)
-            public const ushort INITIALIZE_SUCCESS = 202;
-            public const ushort INITIALIZE_FAIL = 205;
+            public const ushort INITIALIZE_SUCCESS = 252;
+            public const ushort INITIALIZE_FAIL = 255;
 
             public const ushort SIGNOUT = 300;
             public const ushort SIGNOUT_SUCCESS = 302;
