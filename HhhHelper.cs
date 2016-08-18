@@ -111,32 +111,27 @@ namespace Junhaehok
             }
             return bytes;
         }
+        
         /*
         public static object BytesToStruct<T>(byte[] b)
         {
-            T result = (T)Activator.CreateInstance();
-            int copyIndex = 0;
+            int size = 0;
             foreach (var field in typeof(T).GetFields())
             {
                 switch (Type.GetTypeCode(field.FieldType))
                 {
                     case TypeCode.Int32:
-                        ToInt32(b, copyIndex);
-                        copyIndex += sizeof(int);
                     case TypeCode.UInt32:
                         size += 4;
                         break;
                     case TypeCode.UInt16:
                         size += 2;
                         break;
-                    case TypeCode.String:
-                        byte[] stringbytes = Encoding.UTF8.GetBytes((string)field.GetValue(strct));
-                        size += stringbytes.Length;
-                        break;
                     default:
                         byte[] tempbytes;
                         if (field.FieldType.IsArray)
                         {
+
                             tempbytes = (byte[])field.GetValue(strct);
                             otherStructs.Enqueue(tempbytes);
                             size += tempbytes.Length;
@@ -152,15 +147,56 @@ namespace Junhaehok
                         break;
                 }
             }
+
+            T result = (T)Activator.CreateInstance(typeof(T));
+            int copyIndex = 0;
+            foreach (var field in typeof(T).GetFields())
+            {
+                switch (Type.GetTypeCode(field.FieldType))
+                {
+                    case TypeCode.Int32:
+                        field.SetValue(result, ToInt32(b, copyIndex));
+                        copyIndex += sizeof(int);
+                        break;
+                    case TypeCode.UInt32:
+                        field.SetValue(result, ToUInt32(b, copyIndex));
+                        copyIndex += sizeof(uint);
+                        break;
+                    case TypeCode.UInt16:
+                        field.SetValue(result, ToUInt16(b, copyIndex));
+                        copyIndex += sizeof(ushort);
+                        break;
+                    default:
+                        byte[] tempbytes;
+                        if (field.FieldType.IsArray)
+                        {
+                            tempbytes = new byte[b.Length - copyIndex];
+                            Array.Copy(b, copyIndex, tempbytes, 0, tempbytes.Length);
+                            field.SetValue(result, tempbytes);
+                            copyIndex += tempbytes.Length;
+                        }
+                        else if (field.FieldType.IsNested)
+                        {
+                            tempbytes = new byte[b.Length - copyIndex];
+                            object obj = BytesToStruct<field.FieldType>(tempbytes);
+                            field.SetValue(result, obj);
+                            copyIndex += ;
+                        }
+                        else
+                            Console.WriteLine("ERR: FieldInfo[1] - not implemented for type {0}", field.FieldType);
+                        break;
+                }
+            }
         }
         */
     }
 
-    public static class Hhhhelper
+    public static class HhhHelper
     {
+        public const int HEADER_SIZE = 4;
         public static byte[] PacketToBytes(Packet packet)
         {
-            byte[] buffer = new byte[2 + 2 + packet.data.Length];
+            byte[] buffer = new byte[sizeof(ushort) + sizeof(ushort) + packet.data.Length];
             Array.Copy(GetBytes(packet.header.code), 0, buffer, FieldIndex.CODE, sizeof(ushort));
             Array.Copy(GetBytes(packet.header.size), 0, buffer, FieldIndex.SIZE, sizeof(ushort));
             Array.Copy(packet.data, 0, buffer, FieldIndex.DATA, packet.data.Length);
@@ -169,7 +205,7 @@ namespace Junhaehok
 
         public static Packet BytesToPacket(byte[] bytes)
         {
-            byte[] headerBytes = new byte[4];
+            byte[] headerBytes = new byte[HEADER_SIZE];
             byte[] dataBytes = new byte[bytes.Length - 4];
             Array.Copy(bytes, 0, headerBytes, 0, headerBytes.Length);
             Array.Copy(bytes, 4, dataBytes, 0, dataBytes.Length);
@@ -215,6 +251,9 @@ namespace Junhaehok
             public const ushort DUMMY_SIGNIN = 220;
             public const ushort DUMMY_SIGNIN_SUCCESS = 222;
             public const ushort DUMMY_SIGNIN_FAIL = 225;
+            public const ushort INITIALIZE = 250; // CL to FE (check cookie as soon as connection established)
+            public const ushort INITIALIZE_SUCCESS = 202;
+            public const ushort INITIALIZE_FAIL = 205;
 
             public const ushort SIGNOUT = 300;
             public const ushort SIGNOUT_SUCCESS = 302;
@@ -229,12 +268,13 @@ namespace Junhaehok
             public const ushort CREATE_ROOM_FAIL = 505;
 
             public const ushort JOIN = 600;
-            public const ushort JOIN_SUCCESS = 602;
-            public const ushort JOIN_FAIL = 605;
-            public const ushort JOIN_FULL_FAIL = 615;
-            public const ushort JOIN_NULL_FAIL = 625;
+            public const ushort JOIN_SUCCESS = 602; //BE -> FE -> CL (room is in current FE - can join)
+            public const ushort JOIN_FAIL = 605;    
+            public const ushort JOIN_FULL_FAIL = 615; //BE -> FE -> CL (room full)
+            public const ushort JOIN_NULL_FAIL = 625; //BE -> FE -> CL (room does not exist)
+            public const ushort JOIN_REDIRECT = 630;  //BE -> FE -> CL (room not in current FE - REDIRECT)
 
-            public const ushort CONNECTION_PASS = 650;
+            public const ushort CONNECTION_PASS = 650; //BE -> FE (user is going your way with this cookie)
             public const ushort CONNECTION_PASS_SUCCESS = 652;
             public const ushort CONNECTION_PASS_FAIL = 655;
 
