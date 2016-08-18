@@ -1,50 +1,191 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using static Junhaehok.Packet;
 using static System.BitConverter;
 
-namespace Joonhaehok
+namespace Junhaehok
 {
-    public struct Header
-    {
-        public ushort code;
-        public ushort size;
-    }
     public struct Packet
     {
+        public struct Header
+        {
+            public ushort code;
+            public ushort size;
+            public Header(ushort code, ushort size)
+            {
+                this.code = code;
+                this.size = size;
+            }
+        }
+
         public Header header;
         public byte[] data;
+
+        public Packet(Header header, byte[] data)
+        {
+            this.header = header;
+            this.data = data;
+        }
+    }
+
+    public static class MarshalA
+    {
+        public static byte[] StructToBytes(object strct)
+        {
+            int size = 0;
+            Queue<byte[]> otherStructs = new Queue<byte[]>();
+            foreach (var field in strct.GetType().GetFields())
+            {
+                switch (Type.GetTypeCode(field.FieldType))
+                {
+                    case TypeCode.Int32:
+                    case TypeCode.UInt32:
+                        size += 4;
+                        break;
+                    case TypeCode.UInt16:
+                        size += 2;
+                        break;
+                    case TypeCode.String:
+                        byte[] stringbytes = Encoding.UTF8.GetBytes((string)field.GetValue(strct));
+                        size += stringbytes.Length;
+                        break;
+                    default:
+                        byte[] tempbytes;
+                        if (field.FieldType.IsArray)
+                        {
+                            tempbytes = (byte[])field.GetValue(strct);
+                            otherStructs.Enqueue(tempbytes);
+                            size += tempbytes.Length;
+                        }
+                        else if (field.FieldType.IsNested)
+                        {
+                            tempbytes = StructToBytes(field.GetValue(strct));
+                            otherStructs.Enqueue(tempbytes);
+                            size += tempbytes.Length;
+                        }
+                        else
+                            Console.WriteLine("ERR: FieldInfo[1] - not implemented for type {0}", field.FieldType);
+                        break;
+                }
+            }
+
+            byte[] bytes = new byte[size];
+            int copyIndex = 0;
+            foreach (var field in strct.GetType().GetFields())
+            {
+                if (field.FieldType.IsArray || field.FieldType.IsNested)
+                {
+                    byte[] tempbytes = otherStructs.Dequeue();
+                    Array.Copy(tempbytes, 0, bytes, copyIndex, tempbytes.Length);
+                    copyIndex += tempbytes.Length;
+                }
+                else
+                {
+                    switch (Type.GetTypeCode(field.FieldType))
+                    {
+                        case TypeCode.Int32:
+                            Array.Copy(GetBytes((int)field.GetValue(strct)), 0, bytes, copyIndex, sizeof(int));
+                            copyIndex += sizeof(int);
+                            break;
+                        case TypeCode.UInt16:
+                            Array.Copy(GetBytes((ushort)field.GetValue(strct)), 0, bytes, copyIndex, sizeof(ushort));
+                            copyIndex += sizeof(ushort);
+                            break;
+                        case TypeCode.UInt32:
+                            Array.Copy(GetBytes((uint)field.GetValue(strct)), 0, bytes, copyIndex, sizeof(uint));
+                            copyIndex += sizeof(uint);
+                            break;
+                        case TypeCode.String:
+                            byte[] stringbytes = Encoding.UTF8.GetBytes((string)field.GetValue(strct));
+                            Array.Copy(stringbytes, 0, bytes, copyIndex, stringbytes.Length);
+                            copyIndex += stringbytes.Length;
+                            break;
+                        default:
+                            Console.WriteLine("ERR: FieldInfo[2] - not implemented for type {0}", field.FieldType);
+                            break;
+                    }
+                }
+            }
+            return bytes;
+        }
+        /*
+        public static object BytesToStruct<T>(byte[] b)
+        {
+            T result = (T)Activator.CreateInstance();
+            int copyIndex = 0;
+            foreach (var field in typeof(T).GetFields())
+            {
+                switch (Type.GetTypeCode(field.FieldType))
+                {
+                    case TypeCode.Int32:
+                        ToInt32(b, copyIndex);
+                        copyIndex += sizeof(int);
+                    case TypeCode.UInt32:
+                        size += 4;
+                        break;
+                    case TypeCode.UInt16:
+                        size += 2;
+                        break;
+                    case TypeCode.String:
+                        byte[] stringbytes = Encoding.UTF8.GetBytes((string)field.GetValue(strct));
+                        size += stringbytes.Length;
+                        break;
+                    default:
+                        byte[] tempbytes;
+                        if (field.FieldType.IsArray)
+                        {
+                            tempbytes = (byte[])field.GetValue(strct);
+                            otherStructs.Enqueue(tempbytes);
+                            size += tempbytes.Length;
+                        }
+                        else if (field.FieldType.IsNested)
+                        {
+                            tempbytes = StructToBytes(field.GetValue(strct));
+                            otherStructs.Enqueue(tempbytes);
+                            size += tempbytes.Length;
+                        }
+                        else
+                            Console.WriteLine("ERR: FieldInfo[1] - not implemented for type {0}", field.FieldType);
+                        break;
+                }
+            }
+        }
+        */
     }
 
     public static class Hhhhelper
     {
         public static byte[] PacketToBytes(Packet packet)
         {
-            byte[] buffer = new byte[(sizeof(ushort) * 2) + packet.data.Length];
-            Array.Copy(GetBytes(packet.code), 0, buffer, FieldIndex.CODE, sizeof(ushort));
-            Array.Copy(GetBytes(packet.size), 0, buffer, FieldIndex.SIZE, sizeof(ushort));
-            Array.Copy(packet.data, 0, buffer, FieldIndex.DATA, p.data.Length);
+            byte[] buffer = new byte[2 + 2 + packet.data.Length];
+            Array.Copy(GetBytes(packet.header.code), 0, buffer, FieldIndex.CODE, sizeof(ushort));
+            Array.Copy(GetBytes(packet.header.size), 0, buffer, FieldIndex.SIZE, sizeof(ushort));
+            Array.Copy(packet.data, 0, buffer, FieldIndex.DATA, packet.data.Length);
             return buffer;
         }
 
         public static Packet BytesToPacket(byte[] bytes)
         {
-            Packet packet = new Packet();
+            byte[] headerBytes = new byte[4];
+            byte[] dataBytes = new byte[bytes.Length - 4];
+            Array.Copy(bytes, 0, headerBytes, 0, headerBytes.Length);
+            Array.Copy(bytes, 4, dataBytes, 0, dataBytes.Length);
 
-            packet.header.code = ToUInt16(bytes, FieldIndex.CODE);
-            packet.header.size = ToUInt16(bytes, FieldIndex.SIZE);
-            Array.Copy(bytes, FieldIndex.DATA, packet.data, 0, packet.header.size);
+            Header header = BytesToHeader(headerBytes);
+            Packet packet = new Packet(header, dataBytes);
 
             return packet;
         }
-            
+
         public static Header BytesToHeader(byte[] bytes)
         {
             Header header = new Header();
 
-            header.code = ToUint16(bytes, FieldIndex.CODE);
-            header.size = ToUint16(bytes, FieldIndex.SIZE);
+            header.code = ToUInt16(bytes, FieldIndex.CODE);
+            header.size = ToUInt16(bytes, FieldIndex.SIZE);
 
             return header;
         }
@@ -112,6 +253,13 @@ namespace Joonhaehok
             public const ushort HEARTBEAT = 1000;
             public const ushort HEARTBEAT_SUCCESS = 1002;
             public const ushort HEARTBEAT_FAIL = 1005;
+        }
+        public static string PacketDebug(Packet p)
+        {
+            if (null == p.data)
+                return "CODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: ";
+            else
+                return "CODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: " + Encoding.UTF8.GetString(p.data);
         }
     }
 }
