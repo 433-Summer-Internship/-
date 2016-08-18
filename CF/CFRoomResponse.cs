@@ -1,5 +1,8 @@
 //create room response
-struct CFCreateRoomResponse
+struct CFRoomResponse
 {
     int roomNo;
 }
+
+//Room list Response
+//list<int> list;
