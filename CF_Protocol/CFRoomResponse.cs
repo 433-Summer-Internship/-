@@ -1,8 +1,23 @@
-//create room response
-struct CFRoomResponse
+struct CFRoomCreateResponse
 {
-    int roomNo;
+    int roomNum;
 }
 
-//Room list Response
-//list<int> list;
+struct CFRoomListResponse
+{
+}
+
+struct CFRoomJoinResponse
+{
+}
+
+struct CFRoomLeaveResponse
+{
+}
+
+struct CFRoomJoinRedirectResponse
+{
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
+    char[] ip;
+    int port;
+}

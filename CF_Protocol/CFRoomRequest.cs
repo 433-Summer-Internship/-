@@ -1,5 +1,16 @@
-struct CFRoomRequest
+struct CFRoomCreateRequest
 {
-    //create, join, leave
-    //none   
+}
+
+struct CFRoomListRequest
+{
+}
+
+struct CFRoomJoinRequest
+{
+    int roomNum;
+}
+
+struct CFRoomLeaveRequest
+{
 }
