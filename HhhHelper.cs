@@ -12,10 +12,12 @@ namespace Junhaehok
     {
         public struct Header
         {
+            public long uid;
             public ushort code;
             public ushort size;
-            public Header(ushort code, ushort size)
+            public Header(ushort code, ushort size, long uid = 0)
             {
+                this.uid = uid;
                 this.code = code;
                 this.size = size;
             }
@@ -193,10 +195,11 @@ namespace Junhaehok
 
     public static class HhhHelper
     {
-        public const int HEADER_SIZE = 4;
+        public const int HEADER_SIZE = 12;
         public static byte[] PacketToBytes(Packet packet)
         {
-            byte[] buffer = new byte[sizeof(ushort) + sizeof(ushort) + packet.data.Length];
+            byte[] buffer = new byte[sizeof(long) + sizeof(ushort) + sizeof(ushort) + packet.data.Length];
+            Array.Copy(GetBytes(packet.header.uid), 0, buffer, FieldIndex.UID, sizeof(long));
             Array.Copy(GetBytes(packet.header.code), 0, buffer, FieldIndex.CODE, sizeof(ushort));
             Array.Copy(GetBytes(packet.header.size), 0, buffer, FieldIndex.SIZE, sizeof(ushort));
             Array.Copy(packet.data, 0, buffer, FieldIndex.DATA, packet.data.Length);
@@ -206,9 +209,9 @@ namespace Junhaehok
         public static Packet BytesToPacket(byte[] bytes)
         {
             byte[] headerBytes = new byte[HEADER_SIZE];
-            byte[] dataBytes = new byte[bytes.Length - 4];
+            byte[] dataBytes = new byte[bytes.Length - HEADER_SIZE];
             Array.Copy(bytes, 0, headerBytes, 0, headerBytes.Length);
-            Array.Copy(bytes, 4, dataBytes, 0, dataBytes.Length);
+            Array.Copy(bytes, HEADER_SIZE, dataBytes, 0, dataBytes.Length);
 
             Header header = BytesToHeader(headerBytes);
             Packet packet = new Packet(header, dataBytes);
@@ -220,6 +223,7 @@ namespace Junhaehok
         {
             Header header = new Header();
 
+            header.uid = ToUInt16(bytes, FieldIndex.UID);
             header.code = ToUInt16(bytes, FieldIndex.CODE);
             header.size = ToUInt16(bytes, FieldIndex.SIZE);
 
@@ -228,9 +232,10 @@ namespace Junhaehok
 
         public class FieldIndex
         {
-            public const int CODE = 0;
-            public const int SIZE = 2;
-            public const int DATA = 4;
+            public const int UID = 0;
+            public const int CODE = 8;
+            public const int SIZE = 10;
+            public const int DATA = 12;
         }
 
         public class Code
@@ -297,9 +302,9 @@ namespace Junhaehok
         public static string PacketDebug(Packet p)
         {
             if (null == p.data)
-                return "CODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: ";
+                return "UID: " + p.header.uid + "\nCODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: ";
             else
-                return "CODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: " + Encoding.UTF8.GetString(p.data);
+                return "UID: " + p.header.uid + "\nCODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: " + Encoding.UTF8.GetString(p.data);
         }
     }
 }
