@@ -33,176 +33,18 @@ namespace Junhaehok
         }
     }
 
-    public static class MarshalA
-    {
-        public static byte[] StructToBytes(object strct)
-        {
-            int size = 0;
-            Queue<byte[]> otherStructs = new Queue<byte[]>();
-            foreach (var field in strct.GetType().GetFields())
-            {
-                switch (Type.GetTypeCode(field.FieldType))
-                {
-                    case TypeCode.Int32:
-                    case TypeCode.UInt32:
-                        size += 4;
-                        break;
-                    case TypeCode.UInt16:
-                        size += 2;
-                        break;
-                    case TypeCode.String:
-                        byte[] stringbytes = Encoding.UTF8.GetBytes((string)field.GetValue(strct));
-                        size += stringbytes.Length;
-                        break;
-                    default:
-                        byte[] tempbytes;
-                        if (field.FieldType.IsArray)
-                        {
-                            tempbytes = (byte[])field.GetValue(strct);
-                            otherStructs.Enqueue(tempbytes);
-                            size += tempbytes.Length;
-                        }
-                        else if (field.FieldType.IsNested)
-                        {
-                            tempbytes = StructToBytes(field.GetValue(strct));
-                            otherStructs.Enqueue(tempbytes);
-                            size += tempbytes.Length;
-                        }
-                        else
-                            Console.WriteLine("ERR: FieldInfo[1] - not implemented for type {0}", field.FieldType);
-                        break;
-                }
-            }
-
-            byte[] bytes = new byte[size];
-            int copyIndex = 0;
-            foreach (var field in strct.GetType().GetFields())
-            {
-                if (field.FieldType.IsArray || field.FieldType.IsNested)
-                {
-                    byte[] tempbytes = otherStructs.Dequeue();
-                    Array.Copy(tempbytes, 0, bytes, copyIndex, tempbytes.Length);
-                    copyIndex += tempbytes.Length;
-                }
-                else
-                {
-                    switch (Type.GetTypeCode(field.FieldType))
-                    {
-                        case TypeCode.Int32:
-                            Array.Copy(GetBytes((int)field.GetValue(strct)), 0, bytes, copyIndex, sizeof(int));
-                            copyIndex += sizeof(int);
-                            break;
-                        case TypeCode.UInt16:
-                            Array.Copy(GetBytes((ushort)field.GetValue(strct)), 0, bytes, copyIndex, sizeof(ushort));
-                            copyIndex += sizeof(ushort);
-                            break;
-                        case TypeCode.UInt32:
-                            Array.Copy(GetBytes((uint)field.GetValue(strct)), 0, bytes, copyIndex, sizeof(uint));
-                            copyIndex += sizeof(uint);
-                            break;
-                        case TypeCode.String:
-                            byte[] stringbytes = Encoding.UTF8.GetBytes((string)field.GetValue(strct));
-                            Array.Copy(stringbytes, 0, bytes, copyIndex, stringbytes.Length);
-                            copyIndex += stringbytes.Length;
-                            break;
-                        default:
-                            Console.WriteLine("ERR: FieldInfo[2] - not implemented for type {0}", field.FieldType);
-                            break;
-                    }
-                }
-            }
-            return bytes;
-        }
-        
-        /*
-        public static object BytesToStruct<T>(byte[] b)
-        {
-            int size = 0;
-            foreach (var field in typeof(T).GetFields())
-            {
-                switch (Type.GetTypeCode(field.FieldType))
-                {
-                    case TypeCode.Int32:
-                    case TypeCode.UInt32:
-                        size += 4;
-                        break;
-                    case TypeCode.UInt16:
-                        size += 2;
-                        break;
-                    default:
-                        byte[] tempbytes;
-                        if (field.FieldType.IsArray)
-                        {
-
-                            tempbytes = (byte[])field.GetValue(strct);
-                            otherStructs.Enqueue(tempbytes);
-                            size += tempbytes.Length;
-                        }
-                        else if (field.FieldType.IsNested)
-                        {
-                            tempbytes = StructToBytes(field.GetValue(strct));
-                            otherStructs.Enqueue(tempbytes);
-                            size += tempbytes.Length;
-                        }
-                        else
-                            Console.WriteLine("ERR: FieldInfo[1] - not implemented for type {0}", field.FieldType);
-                        break;
-                }
-            }
-
-            T result = (T)Activator.CreateInstance(typeof(T));
-            int copyIndex = 0;
-            foreach (var field in typeof(T).GetFields())
-            {
-                switch (Type.GetTypeCode(field.FieldType))
-                {
-                    case TypeCode.Int32:
-                        field.SetValue(result, ToInt32(b, copyIndex));
-                        copyIndex += sizeof(int);
-                        break;
-                    case TypeCode.UInt32:
-                        field.SetValue(result, ToUInt32(b, copyIndex));
-                        copyIndex += sizeof(uint);
-                        break;
-                    case TypeCode.UInt16:
-                        field.SetValue(result, ToUInt16(b, copyIndex));
-                        copyIndex += sizeof(ushort);
-                        break;
-                    default:
-                        byte[] tempbytes;
-                        if (field.FieldType.IsArray)
-                        {
-                            tempbytes = new byte[b.Length - copyIndex];
-                            Array.Copy(b, copyIndex, tempbytes, 0, tempbytes.Length);
-                            field.SetValue(result, tempbytes);
-                            copyIndex += tempbytes.Length;
-                        }
-                        else if (field.FieldType.IsNested)
-                        {
-                            tempbytes = new byte[b.Length - copyIndex];
-                            object obj = BytesToStruct<field.FieldType>(tempbytes);
-                            field.SetValue(result, obj);
-                            copyIndex += ;
-                        }
-                        else
-                            Console.WriteLine("ERR: FieldInfo[1] - not implemented for type {0}", field.FieldType);
-                        break;
-                }
-            }
-        }
-        */
-    }
-
     public static class HhhHelper
     {
         public const int HEADER_SIZE = 12;
         public static byte[] PacketToBytes(Packet packet)
         {
-            byte[] buffer = new byte[sizeof(long) + sizeof(ushort) + sizeof(ushort) + packet.data.Length];
+            byte[] buffer = new byte[sizeof(long) + sizeof(ushort) + sizeof(ushort) + packet.header.size];
             Array.Copy(GetBytes(packet.header.uid), 0, buffer, FieldIndex.UID, sizeof(long));
             Array.Copy(GetBytes(packet.header.code), 0, buffer, FieldIndex.CODE, sizeof(ushort));
             Array.Copy(GetBytes(packet.header.size), 0, buffer, FieldIndex.SIZE, sizeof(ushort));
-            Array.Copy(packet.data, 0, buffer, FieldIndex.DATA, packet.data.Length);
+
+            if (null != packet.data)
+                Array.Copy(packet.data, 0, buffer, FieldIndex.DATA, packet.data.Length);
             return buffer;
         }
 
@@ -223,7 +65,7 @@ namespace Junhaehok
         {
             Header header = new Header();
 
-            header.uid = ToUInt16(bytes, FieldIndex.UID);
+            header.uid = ToInt64(bytes, FieldIndex.UID);
             header.code = ToUInt16(bytes, FieldIndex.CODE);
             header.size = ToUInt16(bytes, FieldIndex.SIZE);
 
