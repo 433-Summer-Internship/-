@@ -8,21 +8,20 @@ using static System.BitConverter;
 
 namespace Junhaehok
 {
+    public struct Header
+    {
+        public long uid;
+        public ushort code;
+        public ushort size;
+        public Header(ushort code, ushort size, long uid = 0)
+        {
+            this.uid = uid;
+            this.code = code;
+            this.size = size;
+        }
+    }
     public struct Packet
     {
-        public struct Header
-        {
-            public long uid;
-            public ushort code;
-            public ushort size;
-            public Header(ushort code, ushort size, long uid = 0)
-            {
-                this.uid = uid;
-                this.code = code;
-                this.size = size;
-            }
-        }
-
         public Header header;
         public byte[] data;
 
@@ -140,13 +139,146 @@ namespace Junhaehok
             public const ushort HEARTBEAT = 1000;
             public const ushort HEARTBEAT_SUCCESS = 1002;
             public const ushort HEARTBEAT_FAIL = 1005;
+
+            public const ushort ADVERTISE = 1100;
+            public const ushort ADVERTISE_SUCCESS = 1102;
+            public const ushort ADVERTISE_FAIL = 1105;
+
+            public const ushort SERVER_START = 1200;
+            public const ushort SERVER_START_SUCCESS = 1202;
+            public const ushort SERVER_START_FAIL = 1205;
+            public const ushort SERVER_RESTART = 1240;
+            public const ushort SERVER_RESTART_SUCCESS = 1242;
+            public const ushort SERVER_RESTART_FAIL = 1245;
+            public const ushort SERVER_STOP = 1270;
+            public const ushort SERVER_STOP_SUCCESS = 1272;
+            public const ushort SERVER_STOP_FAIL = 1275;
+
+            public const ushort SERVER_INFO = 1300;
+            public const ushort SERVER_INFO_SUCCESS = 1302;
+            public const ushort SERVER_INFO_FAIL = 1305;
+
+            public const ushort RANKINGS = 1400;
+            public const ushort RANKINGS_SUCCESS = 1402;
+            public const ushort RANKINGS_FAIL = 1405;
         }
         public static string PacketDebug(Packet p)
         {
             if (null == p.data)
-                return "UID: " + p.header.uid + "\nCODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: ";
+                return "UID: " + p.header.uid + "\nCODE: " + p.header.code + " ( " + CodeToString(p.header.code) + " ) " + "\nSIZE: " + p.header.size + "\nDATA: ";
             else
-                return "UID: " + p.header.uid + "\nCODE: " + p.header.code + "\nSIZE: " + p.header.size + "\nDATA: " + Encoding.UTF8.GetString(p.data);
+                return "UID: " + p.header.uid + "\nCODE: " + p.header.code + " ( " + CodeToString(p.header.code) + " ) " + "\nSIZE: " + p.header.size + "\nDATA: " + Encoding.UTF8.GetString(p.data);
+        }
+
+        public static string CodeToString(int code)
+        {
+            switch (code)
+            {
+                case Code.SIGNUP:
+                    return "SIGNUP";
+                case Code.SIGNUP_SUCCESS:
+                    return "SIGNUP_SUCCESS";
+                case Code.SIGNUP_FAIL:
+                    return "SIGNUP_FAIL";
+                case Code.DELETE_USER:
+                    return "DELETE_USER";
+                case Code.DELETE_USER_SUCCESS:
+                    return "DELETE_USER_SUCCESS";
+                case Code.DELETE_USER_FAIL:
+                    return "DELETE_USER_FAIL";
+                case Code.UPDATE_USER:
+                    return "UPDATE_USER";
+                case Code.UPDATE_USER_SUCCESS:
+                    return "UPDATE_USER_SUCCESS";
+                case Code.UPDATE_USER_USER_FAIL:
+                    return "UPDATE_USER_USER_FAIL";
+                case Code.SIGNIN:
+                    return "SIGNIN";
+                case Code.SIGNIN_SUCCESS:
+                    return "SIGNIN_SUCCESS";
+                case Code.SIGNIN_FAIL:
+                    return "SIGNIN_FAIL";
+                case Code.DUMMY_SIGNIN:
+                    return "DUMMY_SIGNIN";
+                case Code.DUMMY_SIGNIN_SUCCESS:
+                    return "DUMMY_SIGNIN_SUCCESS";
+                case Code.DUMMY_SIGNIN_FAIL:
+                    return "DUMMY_SIGNIN_FAIL";
+                case Code.INITIALIZE:
+                    return "INITIALIZE";
+                case Code.INITIALIZE_SUCCESS:
+                    return "INITIALIZE_SUCCESS";
+                case Code.INITIALIZE_FAIL:
+                    return "INITIALIZE_FAIL";
+                case Code.SIGNOUT:
+                    return "SIGNOUT";
+                case Code.SIGNOUT_SUCCESS:
+                    return "SIGNOUT_SUCCESS";
+                case Code.SIGNOUT_FAIL:
+                    return "SIGNOUT_FAIL";
+                case Code.ROOM_LIST:
+                    return "ROOM_LIST";
+                case Code.ROOM_LIST_SUCCESS:
+                    return "ROOM_LIST_SUCCESS";
+                case Code.ROOM_LIST_FAIL:
+                    return "ROOM_LIST_FAIL";
+                case Code.CREATE_ROOM:
+                    return "CREATE_ROOM";
+                case Code.CREATE_ROOM_SUCCESS:
+                    return "CREATE_ROOM_SUCCESS";
+                case Code.CREATE_ROOM_FAIL:
+                    return "CREATE_ROOM_FAIL";
+                case Code.JOIN:
+                    return "JOIN";
+                case Code.JOIN_SUCCESS:
+                    return "JOIN_SUCCESS";
+                case Code.JOIN_FAIL:
+                    return "JOIN_FAIL";
+                case Code.JOIN_FULL_FAIL:
+                    return "JOIN_FULL_FAIL";
+                case Code.JOIN_NULL_FAIL:
+                    return "JOIN_NULL_FAIL";
+                case Code.JOIN_REDIRECT:
+                    return "JOIN_REDIRECT";
+                case Code.CONNECTION_PASS:
+                    return "CONNECTION_PASS";
+                case Code.CONNECTION_PASS_SUCCESS:
+                    return "CONNECTION_PASS_SUCCESS";
+                case Code.CONNECTION_PASS_FAIL:
+                    return "CONNECTION_PASS_FAIL";
+                case Code.LEAVE_ROOM:
+                    return "LEAVE_ROOM";
+                case Code.LEAVE_ROOM_SUCCESS:
+                    return "LEAVE_ROOM_SUCCESS";
+                case Code.LEAVE_ROOM_FAIL:
+                    return "LEAVE_ROOM_FAIL";
+                case Code.DESTROY_ROOM:
+                    return "DESTROY_ROOM";
+                case Code.DESTROY_ROOM_SUCCESS:
+                    return "DESTROY_ROOM_SUCCESS";
+                case Code.DESTROY_ROOM_FAIL:
+                    return "DESTROY_ROOM_FAIL";
+                case Code.MSG:
+                    return "MSG";
+                case Code.MSG_SUCCESS:
+                    return "MSG_SUCCESS";
+                case Code.MSG_FAIL:
+                    return "MSG_FAIL";
+                case Code.HEARTBEAT:
+                    return "HEARTBEAT";
+                case Code.HEARTBEAT_SUCCESS:
+                    return "HEARTBEAT_SUCCESS";
+                case Code.HEARTBEAT_FAIL:
+                    return "HEARTBEAT_FAIL";
+                case Code.ADVERTISE:
+                    return "ADVERTISE";
+                case Code.ADVERTISE_SUCCESS:
+                    return "ADVERTISE_SUCCESS";
+                case Code.ADVERTISE_FAIL:
+                    return "ADVERTISE_FAIL";
+                default:
+                    return "Unknown";
+            }
         }
     }
 }
