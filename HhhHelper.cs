@@ -89,7 +89,7 @@ namespace Junhaehok
             public const ushort DELETE_USER_FAIL = 115;
             public const ushort UPDATE_USER = 120;
             public const ushort UPDATE_USER_SUCCESS = 122;
-            public const ushort UPDATE_USER_USER_FAIL = 125;
+            public const ushort UPDATE_USER_FAIL = 125;
 
             public const ushort SIGNIN = 200;
             public const ushort SIGNIN_SUCCESS = 202;
