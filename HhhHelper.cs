@@ -90,13 +90,16 @@ namespace Junhaehok
             public const ushort UPDATE_USER = 120;
             public const ushort UPDATE_USER_SUCCESS = 122;
             public const ushort UPDATE_USER_FAIL = 125;
+            public const ushort DUMMY_SIGNUP = 130;
+            public const ushort DUMMY_SIGNUP_SUCCESS = 132;
+            public const ushort DUMMY_SIGNUP_FAIL = 135;
 
             public const ushort SIGNIN = 200;
             public const ushort SIGNIN_SUCCESS = 202;
             public const ushort SIGNIN_FAIL = 205;
-            public const ushort DUMMY_SIGNIN = 220;
-            public const ushort DUMMY_SIGNIN_SUCCESS = 222;
-            public const ushort DUMMY_SIGNIN_FAIL = 225;
+            //public const ushort DUMMY_SIGNIN = 220;
+            //public const ushort DUMMY_SIGNIN_SUCCESS = 222;
+            //public const ushort DUMMY_SIGNIN_FAIL = 225;
             public const ushort INITIALIZE = 250; // CL to FE (check cookie as soon as connection established)
             public const ushort INITIALIZE_SUCCESS = 252;
             public const ushort INITIALIZE_FAIL = 255;
